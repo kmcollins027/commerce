@@ -1,0 +1,22 @@
+{% extends "auctions/layout.html" %} {% block main %}
+
+<h2>{{listing}}</h2>
+
+{% for x in listings %}
+{% if x.title == listing %}
+<img
+      src="{{x.image.url}}"
+      alt="{{x.image}}"
+      style="max-height: 300px"
+    />
+<br>
+Price: ${{x.bid}}
+<br>
+{{x.description}}
+<br>
+Category: {{x.category}}
+<br>
+{% endif %}
+{% endfor %}
+
+{% endblock %}

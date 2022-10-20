@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
@@ -26,6 +27,8 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
+            if 'next' in request.POST:
+                return redirect(request.POST.get('next'))
             return HttpResponseRedirect(reverse("index"))
         else:
             return render(request, "auctions/login.html", {
@@ -66,15 +69,14 @@ def register(request):
     else:
         return render(request, "auctions/register.html")
 
-
+@login_required(login_url='login') 
 def create_listing(request):
     if request.method == "POST":
         list_form = ListingForm(request.POST, request.FILES)
         if list_form.is_valid():
-            #title = list_form.cleaned_data["title"]
-            #description = list_form.cleaned_data["description"]
-            #bid = list_form.cleaned_data["bid"]
-            list_form.save()
+            instance = list_form.save(commit=False)
+            instance.user_id = request.user
+            instance.save()
             return redirect('index')
         else:
             return render(request, "auctions/create_listing.html", {"list_form": list_form})
@@ -82,3 +84,11 @@ def create_listing(request):
         return render(request, "auctions/create_listing.html", {"list_form": ListingForm()})
     
 
+def listing_page(request, listing):
+    listings = Listings.objects.all()
+    return render(request, "auctions/listing_page.html", {
+        "listing": listing, "listings": listings
+    })
+
+def categories(request):
+    return render(request, "auctions/categories.html")

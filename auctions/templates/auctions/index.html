@@ -5,14 +5,19 @@
   {% for listing in listings %}
 
   <section>
+    {% if listing.image == 'No image' %}
+    <p>No image</p>
+
+    {% else %}
     <img
       src="{{listing.image.url}}"
       alt="{{listing.image}}"
       style="max-height: 300px"
     />
-    <h2>{{listing.title}}</h2>
+    {% endif %}
+    <h2><a href="{% url 'listing_page' listing.title %}">{{listing.title}}</a></h2>
     Price: ${{listing.bid}}
-    <br />
+    <br>
     {{listing.description}}
   </section>
 
