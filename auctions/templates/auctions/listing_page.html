@@ -2,21 +2,28 @@
 
 <h2>{{listing}}</h2>
 
-{% for x in listings %}
-{% if x.title == listing %}
-<img
-      src="{{x.image.url}}"
-      alt="{{x.image}}"
-      style="max-height: 300px"
-    />
-<br>
+{% for x in listings %} {% if x.title == listing %}
+<img src="{{x.image.url}}" alt="{{x.image}}" style="max-height: 300px" />
+<br />
 Price: ${{x.bid}}
-<br>
+<br />
 {{x.description}}
-<br>
-Category: {{x.category}}
-<br>
-{% endif %}
-{% endfor %}
+<br />
+Category: {{x.get_category_display}}
+<br />
+
+<div>
+  {% if err_msg %}
+  {{err_msg}}
+  {% endif %}
+  <form action="{% url 'add_watchlist' x.pk %}" method="post">
+    {% csrf_token %}
+    <input type="hidden" value="{{listing.pk}}">
+    <button type="submit">Add this listing to your watchlist</button>
+  </form>
+</div>
+{% endif %} {% endfor %}
+
+
 
 {% endblock %}

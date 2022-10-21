@@ -12,6 +12,8 @@ urlpatterns = [
     path("create_listing", views.create_listing, name="create_listing"),
     path("listing_page/<str:listing>", views.listing_page, name="listing_page"),
     path("categories", views.categories, name="categories"),
+    path("watchlist", views.watchlist, name="watchlist"),
+    path("add_watchlist/<int:listing_id>", views.add_watchlist, name="add_watchlist"),
 ]
 
 if settings.DEBUG:  

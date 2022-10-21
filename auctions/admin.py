@@ -6,3 +6,4 @@ from .models import *
 admin.site.register(Listings)
 admin.site.register(Bids)
 admin.site.register(Comments)
+admin.site.register(Watchlist)

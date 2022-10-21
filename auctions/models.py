@@ -63,4 +63,12 @@ class Comments(models.Model):
     class Meta:
         verbose_name_plural = "Comments"
 
+class Watchlist(models.Model):
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
+    listing_id = models.ForeignKey(Listings, on_delete=models.CASCADE, default=None)
+
+    def __str__(self):
+        return f'{self.user_id} + {self.listing_id}'
+
+
 

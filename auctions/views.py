@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
 from .models import *
@@ -92,3 +92,33 @@ def listing_page(request, listing):
 
 def categories(request):
     return render(request, "auctions/categories.html")
+
+
+def watchlist(request):
+    watchlists = Watchlist.objects.all()
+    return render(request, "auctions/watchlist.html", {"watchlists": watchlists})
+
+
+def add_watchlist(request, listing_id):
+    listing = get_object_or_404(Listings, pk=listing_id)
+    obj, create = Watchlist.objects.get_or_create(user_id=request.user, listing_id=listing)
+    if create:
+        Watchlist.objects.create(user_id=request.user, listing_id=listing)
+        return redirect('watchlist')
+        
+
+    else:
+        return render(request, "auctions/listing_page.html", {"err_msg": f"{listing.title} is already on watchlist"})
+    #listing_id = listing_id
+    #user_id = request.user
+    #if request.method == "POST":
+        #watchlist_add = Watchlist(user_id = request.user, listing_id = request.listing)
+        #watchlist_add.save()
+        #return redirect('watchlist')
+    
+    #else:
+        #context = {
+        #"listing": listing_id,
+        #"user_id": user_id
+        #}
+        #return render(request, "auctions/add_watchlist.html", context)
