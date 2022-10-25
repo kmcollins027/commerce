@@ -1,5 +1,13 @@
 {% extends "auctions/layout.html" %} {% block main %}
 
-<h2>Category Page</h2>
+<h2>Categories</h2>
+
+
+{% for c in categories %}
+
+<a href="{% url 'filtered_listings' c.1 %}">{{c.1}}</a>
+ <br>
+
+{% endfor %}
 
 {% endblock %}

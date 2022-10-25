@@ -4,7 +4,14 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from decimal import Decimal
 
-CATEGORY_CHOICES = [
+
+
+class User(AbstractUser):
+    pass
+
+class Listings(models.Model):
+
+    CATEGORY_CHOICES = [
     ('MS', 'Motors'),
     ('ECCS', 'Electronics'),
     ('C_ART', 'Collectibles & Art'),
@@ -16,10 +23,6 @@ CATEGORY_CHOICES = [
     ('OT', 'Other'),
     ]
 
-class User(AbstractUser):
-    pass
-
-class Listings(models.Model):
     MOTORS = 'MS'
     ELECTRONICS = 'ECCS'
     COLLECTIBLES_ART = 'C_ART'
@@ -31,11 +34,13 @@ class Listings(models.Model):
     OTHER = 'OT'
     
 
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True, max_length=200)
-    bid = models.DecimalField(default=Decimal('0.00'), max_digits=5, decimal_places=2)
+    price = models.PositiveSmallIntegerField(default=0)
+    highestbid = models.PositiveSmallIntegerField(default=0, blank=True)
     category = models.CharField(max_length=16, choices=CATEGORY_CHOICES, default='MOTORS')
+    active = models.BooleanField(default=True)
     image = models.ImageField(default='No Image', upload_to='images')
 
     def __str__(self):
@@ -47,28 +52,30 @@ class Listings(models.Model):
 
 
 class Bids(models.Model):
-    bid_user_id = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
-    bid_listing = models.ForeignKey(Listings, on_delete=models.CASCADE, default=None)
-    bid_amount = models.DecimalField(default=Decimal('0.00'), max_digits=5, decimal_places=2)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
+    listing = models.ForeignKey(Listings, on_delete=models.CASCADE, default=None)
+    bid = models.PositiveSmallIntegerField()
 
     class Meta:
         verbose_name_plural = "Bids"
 
 
 class Comments(models.Model):
-    listing_id = models.ForeignKey(Listings, on_delete=models.CASCADE, default=None)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
+    listing = models.ForeignKey(Listings, on_delete=models.CASCADE, default=None)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
     commment = models.TextField(blank=True, max_length=200)
+    timestamp = models.DateTimeField(default=None, auto_now=False, auto_now_add=False)
 
     class Meta:
         verbose_name_plural = "Comments"
 
 class Watchlist(models.Model):
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
-    listing_id = models.ForeignKey(Listings, on_delete=models.CASCADE, default=None)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
+    listing = models.ForeignKey(Listings, on_delete=models.CASCADE, default=None)
+    active = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.user_id} + {self.listing_id}'
+        return f'{self.user} + {self.listing}'
 
 
 

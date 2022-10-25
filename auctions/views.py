@@ -2,17 +2,28 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import *
 from .forms import *
 
 
 def index(request):
+    listings = Listings.objects.filter(active=1)
     return render(request, "auctions/index.html", {
-        "listings": Listings.objects.all()
+        "listings": listings,
+        "length": len(listings)
 
+    })
+
+def closed_listings(request):
+    listings = Listings.objects.filter(active=0)
+
+    return render(request, "auctions/closed_listings.html", {
+        "listings": listings,
+        "length": len(listings)
     })
 
 
@@ -75,7 +86,7 @@ def create_listing(request):
         list_form = ListingForm(request.POST, request.FILES)
         if list_form.is_valid():
             instance = list_form.save(commit=False)
-            instance.user_id = request.user
+            instance.user = request.user
             instance.save()
             return redirect('index')
         else:
@@ -83,42 +94,135 @@ def create_listing(request):
     else:
         return render(request, "auctions/create_listing.html", {"list_form": ListingForm()})
     
+@login_required(login_url='login') 
+def listing_page(request, item_id):
+    if request.method == "POST":
+        if "watch" in request.POST:
+            try:
+                watchlist = Watchlist.objects.get(user_id=request.user.id, listing_id=item_id)
+                watchlist.active = True
+                watchlist.save(update_fields=["active"])
+                return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
+            except:
+                watchlist = Watchlist(user_id=request.user.id, listing_id=item_id, active=True)
+                watchlist.save()
+                return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
+        if "unwatch" in request.POST:
+            watchlist = Watchlist.objects.get(user_id=request.user.id, listing_id=item_id)
+            watchlist.active = False
+            watchlist.save(update_fields=["active"])
+            return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
 
-def listing_page(request, listing):
-    listings = Listings.objects.all()
-    return render(request, "auctions/listing_page.html", {
-        "listing": listing, "listings": listings
-    })
+        if "comment" in request.POST:
+            comment_form = CommentForm(request.POST)
+            if comment_form.is_valid():
+                instance = comment_form.save(commit=False)
+                instance.user = request.user
+                instance.listing_id = item_id
+                instance.timestamp = timezone.localtime()
+                instance.save()
+                return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
 
-def categories(request):
-    return render(request, "auctions/categories.html")
+        if "bid" in request.POST:
+            listing = Listings.objects.get(pk=item_id)
+            price = listing.price
+            bid = int(request.POST.get("amount"))
+            try:
+                highest = Bids(user_id=request.user.id, listing_id=item_id).last()
+            except:
+                highest = 0
+            if bid < price and bid <= highest:
+                return render(request, "auctions/listing.html", {
+                    "error_message": "Bidding price must be greater than current price"
+                })
+            else:
+                bids = Bids(user_id=request.user.id, listing_id=item_id, bid=bid)
+                bids.save()
+                highestbid = Listings.objects.get(pk=item_id)
+                highestbid.highestbid = bid
+                highestbid.save(update_fields=["highestbid"])
+                return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
 
-
-def watchlist(request):
-    watchlists = Watchlist.objects.all()
-    return render(request, "auctions/watchlist.html", {"watchlists": watchlists})
-
-
-def add_watchlist(request, listing_id):
-    listing = get_object_or_404(Listings, pk=listing_id)
-    obj, create = Watchlist.objects.get_or_create(user_id=request.user, listing_id=listing)
-    if create:
-        Watchlist.objects.create(user_id=request.user, listing_id=listing)
-        return redirect('watchlist')
-        
+        if "close" in request.POST:
+            listing = Listings.objects.get(pk=item_id)
+            listing.active = False
+            listing.save(update_fields=["active"])
+            return HttpResponseRedirect(reverse("index"))
 
     else:
-        return render(request, "auctions/listing_page.html", {"err_msg": f"{listing.title} is already on watchlist"})
-    #listing_id = listing_id
-    #user_id = request.user
-    #if request.method == "POST":
-        #watchlist_add = Watchlist(user_id = request.user, listing_id = request.listing)
-        #watchlist_add.save()
-        #return redirect('watchlist')
-    
-    #else:
-        #context = {
-        #"listing": listing_id,
-        #"user_id": user_id
-        #}
-        #return render(request, "auctions/add_watchlist.html", context)
+        try:
+            watching = Watchlist.objects.get(user_id=request.user.id, listing_id=item_id)
+        except:
+            watching = None
+        try:
+            bids = Bids.objects.filter(listing_id=item_id)
+        except:
+            bids = 0
+        try:
+            listing = Listings.objects.get(pk=item_id)
+            winner = Bids.objects.filter(listing_id=item_id).last()
+        except:
+            winner = None
+
+        return render(request, "auctions/listing_page.html", {
+            "total_bids": len(bids),
+            "bid": bids,
+            "winner": winner,
+            "listing": Listings.objects.get(pk=item_id),
+            "watching": watching,
+            "watchlist": len(Watchlist.objects.filter(user_id=request.user.id)),
+            "comments": Comments.objects.filter(listing_id=item_id),
+            "comment_form": CommentForm(),
+        })
+
+@login_required(login_url='login') 
+def categories(request):
+    return render(request, "auctions/categories.html", {
+        "categories": Listings.CATEGORY_CHOICES
+    })
+
+@login_required(login_url='login') 
+def watchlist(request):
+    try:
+        watchlist = Watchlist.objects.filter(user_id=request.user.id, active=True).values_list("listing_id")
+        watching = Listings.objects.filter(id__in = watchlist)
+    except:
+        watching = 0
+    return render(request, "auctions/watchlist.html", {
+        "watching": watching,
+        "watchlist": len(Watchlist.objects.filter(user_id=request.user.id))
+        })
+
+@login_required(login_url='login') 
+def filtered_listings(request, selection):
+    if selection == 'Motors': 
+        choice = 'MS'
+    if selection == 'Electronics':
+        choice = 'ECCS'
+    if selection == 'Collectibles & Art': 
+        choice = 'C_ART'
+    if selection == 'Clothing & Accessories': 
+        choice = 'CLOTH'
+    if selection == 'Business & Industrial': 
+        choice = 'BUSS'
+    if selection == 'Home & Garden': 
+        choice = 'HG'
+    if selection == 'Sporting Goods': 
+        choice = 'SPORT'
+    if selection == 'Jewelry & Watches': 
+        choice = 'JE'
+    if selection == 'Other': 
+        choice = 'OT'
+
+    filtered = Listings.objects.filter(category=choice, active=1)
+
+    listify = list(filtered)
+    for listing in listify:
+        if listing.active == 0:
+            listify.remove(listing)
+
+    return render(request, "auctions/filtered_listings.html", {
+        "filtered": filtered,
+        "selection": selection,
+        "length": len(filtered)
+    })

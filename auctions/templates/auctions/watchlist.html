@@ -3,9 +3,28 @@
 
 <h2>Watchlist</h2>
 
-{% for w in watchlists %}
-{{w}} <br>
+{% if watchlist == 0 %}
+<h4>Nothing has been added to your watchlist yet</h4>
+
+{% else %}
+
+{% for w in watching %}
+
+{% if w and w.active == 1 %}
+
+<h1><a href="{% url 'listing_page' w.id %}">{{w.title}}</a></h1>
+
+Price: ${{w.price}}
+<br>
+Current Bid: ${{w.highestbid}}
+
+<hr>
+
+{% endif %}
 {% endfor %}
+
+{% endif %}
 
 
 {% endblock %}
+

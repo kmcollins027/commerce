@@ -1,12 +1,14 @@
 {% extends "auctions/layout.html" %} {% block main %}
-<h2>Active Listings</h2>
+<h2>Closed Listings</h2>
 
 {% if length == 0 %}
 <h4>No Active Listings!</h4>
 
 {% else %}
+
 <article>
   {% for listing in listings %}
+
   <section>
     {% if listing.image == 'No image' %}
     <p>No image</p>
@@ -18,8 +20,8 @@
       style="max-height: 300px"
     />
     {% endif %}
-    <h2><a href="{% url 'listing_page' listing.id %}">{{listing.title}}</a></h2>
-    Price: ${{listing.price}}
+    <h2>{{listing.title}}</h2>
+    Sold for: ${{listing.highestbid}}
     <br>
     {{listing.description}}
   </section>
@@ -27,5 +29,4 @@
   {% endfor %}
   {% endif %}
 </article>
-
 {% endblock %}

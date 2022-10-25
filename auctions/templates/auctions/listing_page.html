@@ -1,29 +1,91 @@
 {% extends "auctions/layout.html" %} {% block main %}
 
-<h2>{{listing}}</h2>
+<h2>{{listing.title}}</h2>
 
-{% for x in listings %} {% if x.title == listing %}
-<img src="{{x.image.url}}" alt="{{x.image}}" style="max-height: 300px" />
-<br />
-Price: ${{x.bid}}
-<br />
-{{x.description}}
-<br />
-Category: {{x.get_category_display}}
-<br />
-
+<small>Posted by {{listing.user}}</small>
+<br>
+<img
+  src="{{listing.image.url}}"
+  alt="{{listing.image}}"
+  style="max-height: 300px"
+/>
 <div>
-  {% if err_msg %}
-  {{err_msg}}
-  {% endif %}
-  <form action="{% url 'add_watchlist' x.pk %}" method="post">
+  {% if watching and watching.active == 1 %}
+  <form action="{% url 'listing_page' listing.id %}" method="POST">
     {% csrf_token %}
-    <input type="hidden" value="{{listing.pk}}">
-    <button type="submit">Add this listing to your watchlist</button>
+    <button type="submit" name="unwatch">Remove this from your watchlist</button>
   </form>
+  {% elif not watching or watching.active == 0 %}
+  <form action="{% url 'listing_page' listing.id %}" method="POST">
+    {% csrf_token %}
+    <button type="submit" name="watch">Add this to your watchlist</button>
+  </form>
+  {% endif %}
 </div>
-{% endif %} {% endfor %}
+
+<br>
+Original Price: ${{listing.price}}
+<br>
+Description: {{listing.description}}
+<br>
+Category: {{listing.get_category_display}}
+<br>
+<br>
+
+{% if user.is_authenticated  %}
+    {% if user != listing.user and listing.active == 1 %}
+    <form action="{% url 'listing_page' listing.id %}" method="POST">  
+      {% csrf_token %}          
+      <input type="number" label="Bid Amount" name="amount" 
+      {% if listing.highestbid > listing.price %}
+      min="{{listing.highestbid|add:"1"}}" value="{{listing.highestbid|add:"1"}}"
+      {% else %}
+      min="{{ listing.price }}" value="{{listing.price}}"
+      {% endif %} >
+      <button type="submit" name="bid">Bid</button>
+    </form>
+    {% endif %}
+
+    {% if total_bids == 0 %}
+    No bids yet
+    {% else %}
+    {{ total_bids }} bids total <br>
+    {% endif %}
+
+    {% if user != listing.user %}
+      {% if winner.user_id == user.id %}
+      You currently have the highest bid at ${{listing.highestbid}}
+      {% elif user.id == bids.user_id %}
+      Unfortunately, your bid is currently too low to win this auction
+      {% endif %}
+    {% endif %}
+  {% if user == listing.user and listing.active == 1%}
+    <form action="{% url 'listing_page' listing.id %}" method="POST">
+      {% csrf_token %}
+      <button type="submit" name="close">Close This Auction</button>
+    </form>
+    {% endif %}
+    {% endif %}
 
 
+<br>
+Comments on listing: <br>
+{% if comments %}
+{% for comment in comments %}
+{{comment.user}} on {{comment.timestamp}}:<br>
+{{ comment.commment }}<br>
+{% endfor %}
+{% endif %}
+
+<br>
+{% if user.is_authenticated %}
+      <div>
+        <form action="{% url 'listing_page' listing.id %}" method="POST">
+          {% csrf_token %}
+          {{ comment_form }}
+          <button type="submit" name="comment">Post</button>
+        </form>
+      </div>
+{% endif %}
 
 {% endblock %}

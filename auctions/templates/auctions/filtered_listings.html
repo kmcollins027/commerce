@@ -1,0 +1,35 @@
+{% extends "auctions/layout.html" %} {% block main %}
+
+<h2>Filtered Listings</h2>
+
+{% if length == 0 %}
+    <h4>Nothing listed in that category!</h4>
+{% else %}
+
+<article>
+    {% for f in filtered %}
+  
+    <section>
+      {% if f.image == 'No image' %}
+      <p>No image</p>
+  
+      {% else %}
+      <img
+        src="{{f.image.url}}"
+        alt="{{f.image}}"
+        style="max-height: 300px"
+      />
+      {% endif %}
+      <h2><a href="{% url 'listing_page' f.id %}">{{f.title}}</a></h2>
+      Price: ${{f.price}}
+      <br>
+      {{f.description}}
+    </section>
+  
+    
+    {% endfor %}
+    {% endif %}
+  </article>
+
+
+{% endblock %}
