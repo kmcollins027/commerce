@@ -44,7 +44,7 @@ class Listings(models.Model):
     image = models.ImageField(default='No Image', upload_to='images')
 
     def __str__(self):
-        return (f'{self.title}, {self.description}, {self.bid}')
+        return (f'{self.title}, {self.description}, {self.price}')
     
     class Meta:
         verbose_name_plural = "Listings"
@@ -55,6 +55,9 @@ class Bids(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
     listing = models.ForeignKey(Listings, on_delete=models.CASCADE, default=None)
     bid = models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return (f'{self.user}, {self.listing}, {self.bid}')
 
     class Meta:
         verbose_name_plural = "Bids"

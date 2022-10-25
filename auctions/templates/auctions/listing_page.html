@@ -40,7 +40,7 @@ Category: {{listing.get_category_display}}
       {% if listing.highestbid > listing.price %}
       min="{{listing.highestbid|add:"1"}}" value="{{listing.highestbid|add:"1"}}"
       {% else %}
-      min="{{ listing.price }}" value="{{listing.price}}"
+      min="{{ listing.price|add:"1"}}" value="{{listing.price|add:"1"}}"
       {% endif %} >
       <button type="submit" name="bid">Bid</button>
     </form>
@@ -48,6 +48,8 @@ Category: {{listing.get_category_display}}
 
     {% if total_bids == 0 %}
     No bids yet
+    {% elif total_bids == 1 %}
+    {{total_bids}} bid total <br>
     {% else %}
     {{ total_bids }} bids total <br>
     {% endif %}
@@ -67,12 +69,12 @@ Category: {{listing.get_category_display}}
     {% endif %}
     {% endif %}
 
-
+<hr>
 <br>
 Comments on listing: <br>
 {% if comments %}
 {% for comment in comments %}
-{{comment.user}} on {{comment.timestamp}}:<br>
+{{comment.user}}:
 {{ comment.commment }}<br>
 {% endfor %}
 {% endif %}

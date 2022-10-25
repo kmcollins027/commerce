@@ -6,9 +6,11 @@
 
 {% else %}
 
-<article>
-  {% for listing in listings %}
 
+
+<article>
+  {% for listing, winner in zipped %}
+  
   <section>
     {% if listing.image == 'No image' %}
     <p>No image</p>
@@ -21,11 +23,16 @@
     />
     {% endif %}
     <h2>{{listing.title}}</h2>
+    {% if winner.bid == listing.highestbid %}
+    Sold for: ${{listing.highestbid}} to {{winner.user}}
+    {% else %}
     Sold for: ${{listing.highestbid}}
+    {% endif %}
     <br>
     {{listing.description}}
   </section>
 
+  
   {% endfor %}
   {% endif %}
 </article>

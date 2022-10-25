@@ -19,11 +19,18 @@ def index(request):
     })
 
 def closed_listings(request):
+    winners = []
     listings = Listings.objects.filter(active=0)
+    for listing in listings:
+        winner = Bids.objects.filter(listing_id=listing.id).last()
+        winners.append(winner)
+    zipped = zip(listings, winners)
 
     return render(request, "auctions/closed_listings.html", {
         "listings": listings,
-        "length": len(listings)
+        "length": len(listings),
+        "winners": winners,
+        "zipped": zipped,
     })
 
 
