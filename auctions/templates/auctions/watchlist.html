@@ -14,9 +14,16 @@
 
 <h1><a href="{% url 'listing_page' w.id %}">{{w.title}}</a></h1>
 
+<small>Listing by {{w.user}}</small>
+<br>
+
 Price: ${{w.price}}
 <br>
+{% if w.highestbid == 0 %}
+No bids yet
+{% else %}
 Current Bid: ${{w.highestbid}}
+{% endif %}
 
 <hr>
 

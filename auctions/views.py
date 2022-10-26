@@ -180,6 +180,7 @@ def listing_page(request, item_id):
             "watchlist": len(Watchlist.objects.filter(user_id=request.user.id)),
             "comments": Comments.objects.filter(listing_id=item_id),
             "comment_form": CommentForm(),
+            "user": request.user
         })
 
 @login_required(login_url='login') 

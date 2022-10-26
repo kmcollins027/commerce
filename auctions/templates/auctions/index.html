@@ -18,10 +18,14 @@
       style="max-height: 300px"
     />
     {% endif %}
+    <br>
+    <small>Posted by {{listing.user}}</small>
     <h2><a href="{% url 'listing_page' listing.id %}">{{listing.title}}</a></h2>
     Price: ${{listing.price}}
     <br>
     {{listing.description}}
+
+    
   </section>
 
   {% endfor %}
