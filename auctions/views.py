@@ -103,6 +103,7 @@ def create_listing(request):
     
 @login_required(login_url='login') 
 def listing_page(request, item_id):
+    listing = Listings.objects.get(pk=item_id)
     if request.method == "POST":
         if "watch" in request.POST:
             try:
@@ -131,29 +132,30 @@ def listing_page(request, item_id):
                 return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
 
         if "bid" in request.POST:
-            listing = Listings.objects.get(pk=item_id)
             price = listing.price
-            bid = int(request.POST.get("amount"))
+            amount = int(request.POST.get("amount"))
             try:
                 highest = Bids(user_id=request.user.id, listing_id=item_id).last()
+                # this code always raises an exception
             except:
                 highest = 0
-            if bid < price and bid <= highest:
+            if amount < price and bid <= highest:
+                # this code is never called because highest is always = 0
                 return render(request, "auctions/listing.html", {
                     "error_message": "Bidding price must be greater than current price"
                 })
             else:
-                bids = Bids(user_id=request.user.id, listing_id=item_id, bid=bid)
-                bids.save()
-                highestbid = Listings.objects.get(pk=item_id)
-                highestbid.highestbid = bid
-                highestbid.save(update_fields=["highestbid"])
+                #bids = Bids(user_id=request.user.id, listing_id=item_id, bid=bid)
+                #bids.save()
+                bid = Bids(user_id=request.user.id, listing_id=item_id, bid=amount)
+                bid.save()
+                listing.highestbid = amount
+                listing.save()
                 return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
 
         if "close" in request.POST:
-            listing = Listings.objects.get(pk=item_id)
             listing.active = False
-            listing.save(update_fields=["active"])
+            listing.save()
             return HttpResponseRedirect(reverse("index"))
 
     else:
@@ -201,8 +203,9 @@ def watchlist(request):
         "watchlist": len(Watchlist.objects.filter(user_id=request.user.id))
         })
 
+# no need to be logged in
 @login_required(login_url='login') 
-def filtered_listings(request, selection):
+def KEVINfiltered_listings(request, selection):
     if selection == 'Motors': 
         choice = 'MS'
     if selection == 'Electronics':
@@ -224,6 +227,7 @@ def filtered_listings(request, selection):
 
     filtered = Listings.objects.filter(category=choice, active=1)
 
+    # stale code? you don't use listify, and you've already filter for active=1
     listify = list(filtered)
     for listing in listify:
         if listing.active == 0:
@@ -233,4 +237,14 @@ def filtered_listings(request, selection):
         "filtered": filtered,
         "selection": selection,
         "length": len(filtered)
+    })
+
+# note the "selection" and "length" are not used in the template.
+# if you did need the # of items in filters, you can get it in the template
+# with {{filtered|length}}
+
+def filtered_listings(request, category):
+    filtered = Listings.objects.filter(category=category, active=1)
+    return render(request, "auctions/filtered_listings.html", {
+        "filtered": filtered,
     })

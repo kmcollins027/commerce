@@ -5,7 +5,7 @@
 
 {% for c in categories %}
 
-<a href="{% url 'filtered_listings' c.1 %}">{{c.1}}</a>
+<a href="{% url 'filtered_listings' c.0 %}">{{c.1}}</a>
  <br>
 
 {% endfor %}
