@@ -5,19 +5,27 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.utils import timezone
+from django.http import JsonResponse
 
 from .models import *
 from .forms import *
 
-
+@login_required(login_url='login')
 def index(request):
+    user_list = []
     listings = Listings.objects.filter(active=1)
+    watching = Watchlist.objects.filter(user=request.user)
+
+    for w in watching:
+        user_list.append(w.listing)
+
     return render(request, "auctions/index.html", {
         "listings": listings,
-        "length": len(listings)
-
+        "length": len(listings),
+        "user_list": user_list
     })
 
+@login_required(login_url='login')
 def closed_listings(request):
     winners = []
     listings = Listings.objects.filter(active=0)
@@ -100,24 +108,45 @@ def create_listing(request):
             return render(request, "auctions/create_listing.html", {"list_form": list_form})
     else:
         return render(request, "auctions/create_listing.html", {"list_form": ListingForm()})
+
+def api_toggle_watchlist(request, listing_id):
+    if request.method == "POST":
+        if not Watchlist.objects.filter(user_id=request.user.id, listing_id=listing_id).exists():
+            w = Watchlist.objects.create(user=request.user, listing=Listings.objects.get(pk=listing_id), active=True)
+            return JsonResponse({"current_status": "on"})
+        else:
+            watchlist = Watchlist.objects.get(user_id=request.user.id, listing_id=listing_id)
+            if watchlist.active == False:
+                watchlist.active = True
+                watchlist.save(update_fields=["active"])
+            
+                return JsonResponse({"current_status": "on"})
+            if watchlist.active == True:
+                watchlist.active = False
+                watchlist.save(update_fields=["active"])
+                
+                return JsonResponse({"current_status": "off"})
+            return JsonResponse({'error': 'something went wrong'})
     
 @login_required(login_url='login') 
 def listing_page(request, item_id):
     if request.method == "POST":
         if "watch" in request.POST:
-            try:
+            if not Watchlist.objects.filter(user_id=request.user.id, listing_id=item_id).exists():
+                w = Watchlist.objects.create(user=request.user, listing=Listings.objects.get(pk=item_id), active=True)
+                
+                return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
+            else:
                 watchlist = Watchlist.objects.get(user_id=request.user.id, listing_id=item_id)
                 watchlist.active = True
                 watchlist.save(update_fields=["active"])
                 return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
-            except:
-                watchlist = Watchlist(user_id=request.user.id, listing_id=item_id, active=True)
-                watchlist.save()
-                return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
+                
         if "unwatch" in request.POST:
             watchlist = Watchlist.objects.get(user_id=request.user.id, listing_id=item_id)
             watchlist.active = False
             watchlist.save(update_fields=["active"])
+            watching = Watchlist.objects.get(user_id=request.user.id, listing_id=item_id)
             return HttpResponseRedirect(reverse("listing_page", args=(item_id,)))
 
         if "comment" in request.POST:

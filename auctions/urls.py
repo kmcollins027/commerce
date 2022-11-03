@@ -15,6 +15,7 @@ urlpatterns = [
     path("watchlist", views.watchlist, name="watchlist"),
     path("filtered_listings/<str:selection>", views.filtered_listings, name="filtered_listings"),
     path("closed_listings", views.closed_listings, name="closed_listings"),
+    path("api/toggle_watchlist/<int:listing_id>", views.api_toggle_watchlist, name="api-toggle-watchlist"),
 ]
 
 if settings.DEBUG:  

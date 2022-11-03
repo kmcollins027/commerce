@@ -73,7 +73,7 @@ class Comments(models.Model):
         verbose_name_plural = "Comments"
 
 class Watchlist(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=None, related_name='watch_active')
     listing = models.ForeignKey(Listings, on_delete=models.CASCADE, default=None)
     active = models.BooleanField(default=False)
 
