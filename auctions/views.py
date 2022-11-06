@@ -17,7 +17,8 @@ def index(request):
     watching = Watchlist.objects.filter(user=request.user)
 
     for w in watching:
-        user_list.append(w.listing)
+        if w.active:
+            user_list.append(w.listing)
 
     return render(request, "auctions/index.html", {
         "listings": listings,
@@ -109,7 +110,7 @@ def create_listing(request):
     else:
         return render(request, "auctions/create_listing.html", {"list_form": ListingForm()})
 
-def api_toggle_watchlist(request, listing_id):
+def api_toggle_watchlist0(request, listing_id):
     if request.method == "POST":
         if not Watchlist.objects.filter(user_id=request.user.id, listing_id=listing_id).exists():
             w = Watchlist.objects.create(user=request.user, listing=Listings.objects.get(pk=listing_id), active=True)
@@ -127,6 +128,17 @@ def api_toggle_watchlist(request, listing_id):
                 
                 return JsonResponse({"current_status": "off"})
             return JsonResponse({'error': 'something went wrong'})
+    
+def api_toggle_watchlist(request, listing_id):
+    if request.method == "POST":
+        if not Watchlist.objects.filter(user_id=request.user.id, listing_id=listing_id).exists():
+            watchlist = Watchlist.objects.create(user=request.user, listing=Listings.objects.get(pk=listing_id), active=True)
+        else:
+            watchlist = Watchlist.objects.get(user_id=request.user.id, listing_id=listing_id)
+            watchlist.active = not watchlist.active
+            watchlist.save(update_fields=["active"])
+        return JsonResponse({"current_status": watchlist.active})
+    return JsonResponse({'error': 'something went wrong'})
     
 @login_required(login_url='login') 
 def listing_page(request, item_id):
