@@ -26,11 +26,9 @@
           console.log(data);
           if (data["current_status"] === "on") {
             document.querySelector("#toggle").src= "/media/images/heart-filled.png";
-
           }
           else {
             document.querySelector("#toggle").src= "/media/images/heart-outline.png";
-
           }
         })
         .catch(error => {

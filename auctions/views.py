@@ -6,6 +6,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 
 from .models import *
 from .forms import *
@@ -15,6 +16,11 @@ def index(request):
     user_list = []
     listings = Listings.objects.filter(active=1)
     watching = Watchlist.objects.filter(user=request.user)
+    page = request.POST.get('page', 1)
+
+    paginator = Paginator(listings, 5)
+
+    listing_pages = paginator.page(page)
 
     for w in watching:
         user_list.append(w.listing)
@@ -22,8 +28,33 @@ def index(request):
     return render(request, "auctions/index.html", {
         "listings": listings,
         "length": len(listings),
-        "user_list": user_list
+        "user_list": user_list,
+        "listing_pages": listing_pages
     })
+
+@login_required(login_url='login')
+def index_pagination(request, pages):
+    user_list = []
+    listings = Listings.objects.filter(active=1)
+    watching = Watchlist.objects.filter(user=request.user)
+    page = pages
+
+    paginator = Paginator(listings, 5)
+
+    listing_pages = paginator.page(page)
+
+    for w in watching:
+        user_list.append(w.listing)
+
+    return render(request, "auctions/index.html", {
+        "listings": listings,
+        "length": len(listings),
+        "user_list": user_list,
+        "listing_pages": listing_pages
+    })
+
+
+
 
 @login_required(login_url='login')
 def closed_listings(request):
